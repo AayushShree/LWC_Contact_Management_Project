@@ -1,0 +1,39 @@
+<template>
+    <lightning-card>
+        <template if:true={contacts}>
+            <lightning-datatable key-field="Id" 
+                                data={contacts} 
+                                columns={columns} 
+                                onrowaction={handleRowAction}>
+            </lightning-datatable>
+
+            <template if:true={IsModalOpen}>
+                <section role="dialog" tabindex="-1" aria-modal="true" class="slds-modal slds-fade-in-open">
+                    <div class="slds-modal__container">
+                        <header class="slds-modal__header">
+                            <h2 class="slds-modal__title">Edit Contact</h2>
+                        </header>
+                        <div class="slds-modal__content slds-p-around_medium">
+                            <lightning-record-edit-form record-id={IdToEditRecord} object-api-name="Contact" onsuccess={successHandler}>
+                                <lightning-input-field field-name="FirstName"></lightning-input-field>
+                                <lightning-input-field field-name="LastName"></lightning-input-field>
+                                <lightning-input-field field-name="Title"></lightning-input-field>
+                                <lightning-input-field field-name="Phone"></lightning-input-field>
+                                <lightning-input-field field-name="Email"></lightning-input-field>
+                                <lightning-input-field field-name="AccountId"></lightning-input-field>
+                                <div class="slds-m-top_medium">
+                                    <lightning-button variant="brand" label="Save" type="submit" class="slds-m-right-small"></lightning-button>
+                                    <lightning-button variant="neutral" label="Cancel" onclick={closeModal}></lightning-button>
+                                </div>
+                            </lightning-record-edit-form>
+                        </div>
+                    </div>
+                </section>
+                <div class="slds-backdrop slds-backdrop_open"></div>
+            </template>
+        </template>
+        <template if:true={error}>
+            <div>{error}</div>
+        </template>
+    </lightning-card>
+</template>

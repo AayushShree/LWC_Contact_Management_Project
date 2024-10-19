@@ -1,6 +1,7 @@
-import { LightningElement, wire } from 'lwc';
+import { LightningElement, wire, api } from 'lwc';
 import getContacts from '@salesforce/apex/ContactProjectHelper.getContacts';
 import deleteContact from '@salesforce/apex/ContactProjectHelper.deleteContact';
+import deleteBulkContact from '@salesforce/apex/ContactProjectHelper.deleteBulkContact';
 import { refreshApex } from '@salesforce/apex';
 import { ShowToastEvent } from 'lightning/platformShowToastEvent';
 
@@ -8,10 +9,16 @@ import { ShowToastEvent } from 'lightning/platformShowToastEvent';
 export default class ContactManagementProject extends LightningElement {
 
     contacts;
+    displayMessage = '';
+    edit_create = '';
+    stateHtml = '';
+    searchKey= '';
     wiredContactResult;
     error;
     IsModalOpen = false;
     IdToEditRecord;
+    selectedContacts = [];
+
     columns = [
         { label: 'Id', fieldName: 'Id', type: 'text' },
         { label: 'Name', fieldName: 'Name', type: 'text' },
@@ -36,7 +43,7 @@ export default class ContactManagementProject extends LightningElement {
         // }
     ]
 
-    @wire(getContacts)
+    @wire(getContacts,{searchKeyword : '$searchKey'})
     getwiredContacts(result){
         this.wiredContactResult = result;
         const{data, error} = result;
@@ -64,12 +71,17 @@ export default class ContactManagementProject extends LightningElement {
     }
 
     handleRowAction(event){
+        
+        this.stateHtml = 'Edit';
+        this.edit_create = 'Edit';
         const action = event.detail.action;
         const rowId = event.detail.row.Id;
         switch(action.name){
             case 'edit':
                 this.IsModalOpen = true;
                 this.IdToEditRecord = rowId;
+                
+                // this.template.querySelector('#insert_header').innerHTML = htmld;
                 break;
             case 'delete':
                 this.deleteRecord(rowId);
@@ -77,6 +89,14 @@ export default class ContactManagementProject extends LightningElement {
             default:
                 break;
         }
+    }
+    @api
+    get editOrCreate(){
+        return this.stateHtml;
+    }
+
+    set editOrCreate(stateHtml){
+        this.stateHtml = stateHtml;
     }
 
     deleteRecord(recordId){
@@ -104,10 +124,17 @@ export default class ContactManagementProject extends LightningElement {
     }
 
     successHandler(event){
+        
+        if(this.edit_create === 'Edit'){
+            this.displayMessage = 'Contact Updated Successfully';
+        }
+        else{
+            this.displayMessage = 'Contact Created Successfully';
+        }
         this.dispatchEvent(
             new ShowToastEvent({
                 title: 'Success',
-                message: 'Contact Updated Successfully',
+                message: this.displayMessage,
                 variant: 'success'
             })
         );
@@ -125,4 +152,56 @@ export default class ContactManagementProject extends LightningElement {
         this.IdToEditRecord = undefined;
     }
 
+    handleSearch(event){
+        this.searchKey = event.target.value;
+    }
+    handleContactCreate(event){
+        this.stateHtml = 'Create';
+        this.edit_create = 'Create';
+        this.IsModalOpen = true;
+        this.IdToEditRecord = null;
+    }
+    handleRowSelection(event){
+        const allselectedRows = event.detail.selectedRows;
+        this.selectedContacts = allselectedRows;
+    }
+    handleBulkDelete(){
+        if(this.selectedContacts.length === 0){
+            this.dispatchEvent(
+                new ShowToastEvent({
+                    title: 'Error',
+                    message: 'Please select at least one record',
+                    variant: 'error'
+                })
+            );
+            return;
+        }
+        else{
+            const contactIDS = this.selectedContacts.map(contact => contact.Id);
+            deleteBulkContact({conIds : contactIDS}).then(()=>{
+                this.dispatchEvent(
+                    new ShowToastEvent({
+                        title: 'Success',
+                        message: 'Selected Records deleted successfully',
+                        variant:'success'
+                    })
+                );
+                this.refreshData();
+            }
+            )
+            .catch(error=>{
+                this.dispatchEvent(
+                    new ShowToastEvent({
+                        title: 'Error',
+                        message: error.body.message,
+                        variant: 'error'
+                    })
+                )
+            })
+        }
+    }
+
+    // handleRowSelection(){
+    //     this.selectedRecords = Array.from(this.template.querySelectorAll('lightning-checkbox:checked')).map(checkbox => checkbox.value);
+    // }
 }

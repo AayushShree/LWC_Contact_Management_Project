@@ -1,17 +1,35 @@
 <template>
     <lightning-card>
+        <lightning-layout horizontal-align="spread">
+            <lightning-layout-item flexibility="grow" padding="around-small">
+                <lightning-input
+                type = "text" placeholder= 'Search by name' value ={searchKey} onchange={handleSearch} variant="label-hidden">
+                </lightning-input>
+            </lightning-layout-item>
+            <lightning-layout-item padding="around-small">
+                <lightning-button
+                    label = "New Contact" onclick={handleContactCreate} variant="brand">
+                </lightning-button>
+            </lightning-layout-item>
+            <lightning-layout-item padding="around-small">
+                <lightning-button
+                    label = "Bulk Delete" onclick={handleBulkDelete} variant="destructive">
+                </lightning-button>
+            </lightning-layout-item>
+        </lightning-layout>
         <template if:true={contacts}>
             <lightning-datatable key-field="Id" 
                                 data={contacts} 
                                 columns={columns} 
-                                onrowaction={handleRowAction}>
+                                onrowaction={handleRowAction}
+                                onrowselection={handleRowSelection}>
             </lightning-datatable>
 
             <template if:true={IsModalOpen}>
                 <section role="dialog" tabindex="-1" aria-modal="true" class="slds-modal slds-fade-in-open">
                     <div class="slds-modal__container">
                         <header class="slds-modal__header">
-                            <h2 class="slds-modal__title">Edit Contact</h2>
+                            <h2 class="slds-modal__title">{editOrCreate} Contact</h2>
                         </header>
                         <div class="slds-modal__content slds-p-around_medium">
                             <lightning-record-edit-form record-id={IdToEditRecord} object-api-name="Contact" onsuccess={successHandler}>
